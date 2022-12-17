@@ -62,12 +62,12 @@ double error, lastError, setSpeed, cumError, rateError;
 
 // Functions
 
-float computePid();
+float computePi();
 float time();
+unsigned int read_adc();
 
 int main(void)
 {
-  {
     // Registers
 
     TCCR1A = 0x00;
@@ -85,11 +85,105 @@ int main(void)
 
     uart_init();//initialize communication with PC - debugging
     io_redirect();//redirect printf function to uart, so text will be shown on PC
-    
-    int motor = motorcontrol();
 
+    printf("page 0%c%c%c",255,255,255);//init at 9600 baud.
+    _delay_ms(20);
 
-  }
+    while (1) 
+    {
+      voltage = read_adc();
+      printf("page1.n0.val=%d%c%c%c", voltage, 255,255,255);
+      // for(int i = 0; i<7; i++)
+      // {
+      //         scanf("%c", &readButton[i]);
+      //         if(readButton[i] == 0x1A)//some error occurred - retrieve the 0xFF commands and start over
+      //         {
+      //             scanf("%c", &readButton[i]);
+      //             scanf("%c", &readButton[i]);
+      //             scanf("%c", &readButton[i]);
+      //             continue;
+      //         }
+      // }
+      if(readButton[1] == 0x02 && readButton[2] == 0x05)
+      {
+        printf("get %s.val%c%c%c","page2.n1",255,255,255);
+
+        for(int i = 0; i<8;i++)
+        {
+            scanf("%c", &readNumber[i]);
+        }
+
+        for(int i = 0 ; i < 8 ; i++)
+        {
+          inputdistance1 = readNumber[1] | readNumber[2] << 8 | readNumber[3] << 16 | readNumber[4] << 24;
+        }
+
+        printf("get %s.val%c%c%c","page2.n2",255,255,255);
+
+        for(int i = 0; i<8;i++)
+        {
+          scanf("%c", &readNumber[i]);
+        }
+
+        for(int i = 0 ; i < 8 ; i++)
+        {
+          inputseconds1 = readNumber[1] | readNumber[2] << 8 | readNumber[3] << 16 | readNumber[4] << 24;
+        }       
+      }
+
+      if(readButton[1] == 0x02 && readButton[2] == 0x05)
+      
+      {
+        printf("get %s.val%c%c%c","page3.n1",255,255,255);
+
+        for(int i = 0; i<8;i++)
+        {
+            scanf("%c", &readNumber[i]);
+        }
+
+        for(int i = 0 ; i < 8 ; i++)
+        {
+          inputdistance2 = readNumber[1] | readNumber[2] << 8 | readNumber[3] << 16 | readNumber[4] << 24;
+        }
+
+        printf("get %s.val%c%c%c","page3.n2",255,255,255);
+
+        for(int i = 0; i<8;i++)
+        {
+          scanf("%c", &readNumber[i]);
+        }
+
+        for(int i = 0 ; i < 8 ; i++)
+        {
+          inputseconds2 = readNumber[1] | readNumber[2] << 8 | readNumber[3] << 16 | readNumber[4] << 24;
+        }
+
+        targetspeed1 = inputdistance1/inputseconds1;
+        targetspeed2 = inputdistance2/inputseconds2;
+
+        int motor = motorcontrol();
+
+        printf("page4.n0.val=%d%c%c%c", (int)currentspeed, 255,255,255);
+        printf("page4.n1.val=%d%c%c%c", (int)distancecovered1, 255,255,255);
+        printf("page4.n2.val=%d%c%c%c", (int)distanceleft1, 255,255,255);
+        printf("page4.n3.val=%d%c%c%c", (int)speedcheck, 255,255,255);
+        printf("page4.n4.val=%d%c%c%c", (int)voltage, 255,255,255);
+
+        printf("page 5%c%c%c",255,255,255);
+
+        printf("page5.n0.val=%d%c%c%c", (int)currentspeed, 255,255,255);
+        printf("page5.n1.val=%d%c%c%c", (int)distancecovered2, 255,255,255);
+        printf("page5.n2.val=%d%c%c%c", (int)distanceleft2, 255,255,255);
+        printf("page5.n3.val=%d%c%c%c", (int)speedcheck, 255,255,255);
+        printf("page5.n4.val=%d%c%c%c", (int)voltage, 255,255,255);
+
+        }
+    } 
+    while (voltage > 6.8)
+    {
+        OCR0A = 0;
+        printf("page 6%c%c%c",255,255,255);//init at 9600 baud.
+    }
 }
 
 int motorcontrol(void)
@@ -176,11 +270,11 @@ int motorcontrol(void)
   }
 
   // Below, there is stuff that should be in the while loop -
-  // first executing the computePid function, then checking and assigning the value to OCR0A
+  // first executing the computePi function, then checking and assigning the value to OCR0A
 
   while(1)
   {
-    control = computePid(currentspeed);
+    control = computePi(currentspeed);
 
     // Checking if the control value is between 0 and 255 to avoid a fatal error
     if (control > 0 && control < 255)
@@ -209,7 +303,7 @@ float time(void)
   }      
 }
 
-float computePid(currentspeed)
+float computePi(currentspeed)
 {
 
   // There is no time involved in calculating the derivative and cumulative error
