@@ -39,13 +39,13 @@ float timepassed2;
 float control;
 float totalrotations1 = 0;
 float totalrotations2 = 0;
+float currentspeed;
+float speedtoreach;
 int rpm;
 int count = 0;
 int speedcheck;
 int check = 0;
 double tireCircumference = 2 * 3.14 * 3.25;
-float currentspeed;
-double targetspeed;
 double currenttime;
 double voltage;
 
@@ -121,7 +121,7 @@ int motorcontrol(void)
 
         targetspeed1 = distanceleft1/timeleft1;
 
-        setSpeed = targetspeed1;
+        speedtoreach = targetspeed1 - currentspeed; 
 
         // printf("\nICR1: %u", counter);
         // printf("     Time Passed: %f",timepassed1);
@@ -135,12 +135,17 @@ int motorcontrol(void)
         if( distancecovered1 == inputdistance1 | distancecovered1 > inputdistance1)
         {
           check = 1;
+          OCR0A = 0;
+          printf("\nCondition 1 has been met.\n")
+          printf("\nCondition 2 will start in 5 seconds.\n");
+          _delay_ms(5000)
         }
       }
 
       if(check == 1)
       {
-        totalrotations2++;
+
+        totalrotations2 = totalrotations2 + 8;
 
         timepassed2 = timepassed2 + (opto_time/8);
               
@@ -152,15 +157,15 @@ int motorcontrol(void)
 
         targetspeed2 = distanceleft2/timeleft2;
 
-        setSpeed = targetspeed2;
+        speedtoreach = targetspeed2 - currentspeed; 
 
         // printf("\nICR1: %u", counter);
         printf("\nSpeed(cm/s): %f.", currentspeed);
         printf("     Target speed: %f",targetspeed2);
-        printf("     Time Passed: %f",timepassed2);
         printf("     Total Rotations: %i", totalrotations2);
         printf("     Distance covered: %f", distancecovered2);
-        printf("     Distance left: %f", distanceleft2);
+        // printf("     Distance left: %f", distanceleft2);
+        printf("     Time Passed: %f",timepassed2);
       }
     }
     else
@@ -210,7 +215,7 @@ float computePid(currentspeed)
   // There is no time involved in calculating the derivative and cumulative error
   // because of the equal delay between every function execution
 
-  error = setSpeed - currentspeed;
+  error = speedtoreach - currentspeed;
   cumError += error;
   if (lastError == 0){
       rateError = 0;
