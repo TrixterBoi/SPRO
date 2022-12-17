@@ -181,7 +181,7 @@ int motorcontrol(void)
       {
         // control = (int)control;
         OCR0A += control;
-        printf("    OCRA: %d", OCR0A);
+        // printf("    OCRA: %d", OCR0A);
       }
       if( (distancecovered2 == inputdistance2) | (distancecovered2 > inputdistance2))
       {
