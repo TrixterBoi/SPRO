@@ -157,8 +157,8 @@ int motorcontrol(void)
         // printf("\nICR1: %u", counter);
         printf("\nSpeed(cm/s): %f.", currentspeed);
         printf("     Target speed: %f",targetspeed2);
-        // printf("     Time Passed: %f",timepassed2);
-        // printf("     Total Rotations: %i", totalrotations2);
+        printf("     Time Passed: %f",timepassed2);
+        printf("     Total Rotations: %i", totalrotations2);
         printf("     Distance covered: %f", distancecovered2);
         printf("     Distance left: %f", distanceleft2);
       }
