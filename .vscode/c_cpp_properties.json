@@ -4,7 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "Users\\avich\\Desktop\\Git Files\\SPRO\\SPRO7 Combined Code\\include"
+                "C:\\Users\\avich\\Desktop\\Git Files\\SPRO\\SPRO7 Combined Code\\include",
+                "${workspaceFolder}"
             ],
             "defines": [
                 "_DEBUG",
