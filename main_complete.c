@@ -13,14 +13,15 @@
 
 char readButton[100];
 char readNumber[100];
+char readBuffer[100];
 
 // Variables
 
 unsigned int counter;
-float inputseconds1 = 25;
-float inputdistance1 = 100;
-float inputseconds2 = 55;
-float inputdistance2 = 300;
+float inputseconds1;
+float inputdistance1;
+float inputseconds2;
+float inputdistance2;
 float opto_seconds;
 float opto_time;
 float targetspeed;
@@ -68,10 +69,20 @@ float error, lastError, setSpeed, cumError, rateError;
 float computePi();
 float time();
 unsigned int read_adc();
+float read_value();
+
+
 
 int main(void)
 {
   // Registers
+
+  uart_init();//initialize communication with PC - debugging
+  io_redirect();//redirect printf function to uart, so text will be shown on PC
+
+  printf("page0%c%c%c",255,255,255);//init at 9600 baud.
+  _delay_ms(20);
+
 
   TCCR1A = 0x00;
   DDRB &= ~0x01;
@@ -82,59 +93,20 @@ int main(void)
   TCCR0B |= 0x05;
   TCCR1B = (1 << ICNC1) | (1 << ICES1);
 
-  // Motor speed
-  TCCR1B |= (1 << CS12) | (1 << CS10);
-  OCR0A = 255;
-
-  uart_init();//initialize communication with PC - debugging
-  io_redirect();//redirect printf function to uart, so text will be shown on PC
-
-  printf("page 0%c%c%c",255,255,255);//init at 9600 baud.
-  _delay_ms(20);
 
   while (1) 
   {
     voltage = read_adc();
     printf("page1.n0.val=%d%c%c%c", voltage, 255,255,255);
-    // for(int i = 0; i<7; i++)
-    // {
-    //         scanf("%c", &readButton[i]);
-    //         if(readButton[i] == 0x1A)//some error occurred - retrieve the 0xFF commands and start over
-    //         {
-    //             scanf("%c", &readButton[i]);
-    //             scanf("%c", &readButton[i]);
-    //             scanf("%c", &readButton[i]);
-    //             continue;
-    //         }
-    // }
-    if(readButton[1] == 0x02 && readButton[2] == 0x05)
+
+    readButtonPressed();
+    if(readButton[1] == 0x02 && readButton[2] == 0x03)
     {
-      printf("get %s.val%c%c%c","page2.n1",255,255,255);
-
-      for(int i = 0; i<8;i++)
-      {
-          scanf("%c", &readNumber[i]);
-      }
-
-      for(int i = 0 ; i < 8 ; i++)
-      {
-        inputdistance1 = readNumber[1] | readNumber[2] << 8 | readNumber[3] << 16 | readNumber[4] << 24;
-      }
-
-      printf("get %s.val%c%c%c","page2.n2",255,255,255);
-
-      for(int i = 0; i<8;i++)
-      {
-        scanf("%c", &readNumber[i]);
-      }
-
-      for(int i = 0 ; i < 8 ; i++)
-      {
-        inputseconds1 = readNumber[1] | readNumber[2] << 8 | readNumber[3] << 16 | readNumber[4] << 24;
-      }       
+      inputdistance1 = read_value("page2.n1");
+      printf("%d", (int)inputdistance1);
     }
-
-    if(readButton[1] == 0x02 && readButton[2] == 0x05)
+    readButtonPressed();
+    if(readButton[1] == 0x03 && readButton[2] == 0x03)
     
     {
       printf("get %s.val%c%c%c","page3.n1",255,255,255);
@@ -160,10 +132,10 @@ int main(void)
       {
         inputseconds2 = readNumber[1] | readNumber[2] << 8 | readNumber[3] << 16 | readNumber[4] << 24;
       }
-
+    
       targetspeed1 = inputdistance1/inputseconds1;
       targetspeed2 = inputdistance2/inputseconds2;
-
+      printf("%d%d%d%d",inputdistance1, inputseconds1,inputdistance2,inputseconds2);
       int motor = motorcontrol();
 
       // printf("page4.n0.val=%d%c%c%c", (int)currentspeed, 255,255,255);
@@ -188,12 +160,19 @@ int motorcontrol(void)
 { 
   count = 0;
 
+
+  // Motor speed
+  TCCR1B |= (1 << CS12) | (1 << CS10);
+  OCR0A = 255;
+
   while(1)
   {
     
     count++;
 
     opto_time = time();
+
+
     
     if(voltage > 6.8)
     {
@@ -234,11 +213,11 @@ int motorcontrol(void)
         // printf("     Distance covered: %f", distancecovered1);
         // printf("     Distance left: %f", distanceleft1);
 
-        printf("page4.n0.val=%d%c%c%c", (int)currentspeed, 255,255,255);
-        printf("page4.n1.val=%d%c%c%c", (int)distancecovered1, 255,255,255);
-        printf("page4.n2.val=%d%c%c%c", (int)distanceleft1, 255,255,255);
-        printf("page4.n3.val=%d%c%c%c", (int)speedcheck, 255,255,255);
-        printf("page4.n4.val=%d%c%c%c", (int)voltage, 255,255,255);
+        printf("page4.x0.val=%d%c%c%c", (int)currentspeed*100, 255,255,255);
+        printf("page4.x1.val=%d%c%c%c", (int)distancecovered1*1000, 255,255,255);
+        printf("page4.x2.val=%d%c%c%c", (int)distanceleft1*1000, 255,255,255);
+        printf("page4.n0.val=%d%c%c%c", (int)speedcheck, 255,255,255);
+        printf("page4.x3.val=%d%c%c%c", (int)voltage*10, 255,255,255);
 
         if( distancecovered1 == inputdistance1 | distancecovered1 > inputdistance1)
         {
@@ -282,11 +261,11 @@ int motorcontrol(void)
         // printf("     Distance covered: %f", distancecovered2);
         // printf("     Distance left: %f", distanceleft2);
 
-        printf("page5.n0.val=%d%c%c%c", (int)currentspeed, 255,255,255);
-        printf("page5.n1.val=%d%c%c%c", (int)distancecovered2, 255,255,255);
-        printf("page5.n2.val=%d%c%c%c", (int)distanceleft2, 255,255,255);
-        printf("page5.n3.val=%d%c%c%c", (int)speedcheck, 255,255,255);
-        printf("page5.n4.val=%d%c%c%c", (int)voltage, 255,255,255);
+        printf("page5.x0.val=%d%c%c%c", (int)currentspeed*10, 255,255,255);
+        printf("page5.x1.val=%d%c%c%c", (int)distancecovered2*1000, 255,255,255);
+        printf("page5.x2.val=%d%c%c%c", (int)distanceleft2*1000, 255,255,255);
+        printf("page5.n0.val=%d%c%c%c", (int)speedcheck, 255,255,255);
+        printf("page5.x3.val=%d%c%c%c", (int)voltage*10, 255,255,255);
 
 
       }
@@ -367,4 +346,40 @@ unsigned int read_adc(void)
   ADCSRA = ADCSRA | 0XE7;
   unsigned int adclow = ADCL;
   return (adclow + ((ADCH & 0x03) << 8));
+}
+
+float read_value(char p[])
+{
+  float readValue=0;
+  if((readBuffer[0]=0x65))
+  {
+    int typeExpected=0;
+    printf("get %s.val%c%c%c",p,255,255,255);
+    scanf("%c",&readBuffer[0]);
+
+    if(readBuffer[0] == 0x71)//numeric value 
+      {typeExpected = NUMBER_STRING;} 
+
+    if(typeExpected == NUMBER_STRING)
+    { 
+      for(int i = 1; i<8; i++)
+      {
+          scanf("%c", &readBuffer[i]);
+      }
+    }
+
+    if(readBuffer[0] == 0x71 && readBuffer[5] == 0xFF && readBuffer[6] == 0xFF && readBuffer[7] == 0xFF)
+    {
+      //complete number return
+      readValue = readBuffer[1] | (readBuffer[2] << 8) | (readBuffer[3] << 16)| (readBuffer[4] << 24);
+    }
+  }
+  return readValue;
+}  
+void readButtonPressed()
+{
+  for(int i = 0; i<7; i++)
+  {
+    scanf("%c",&readBuffer[i]);
+  }
 }

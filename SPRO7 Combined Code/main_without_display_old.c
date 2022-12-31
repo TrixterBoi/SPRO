@@ -67,43 +67,32 @@ float error, lastError, setSpeed, cumError, rateError;
 
 float computePi();
 float time();
-unsigned int read_adc();
 
 int main(void)
 {
-  // Registers
-
-  TCCR1A = 0x00;
-  DDRB &= ~0x01;
-  PORTB |= 0x01;
-  TCCR1B = 0XC5;
-  DDRD |= 0x60;
-  TCCR0A |= 0xA3;
-  TCCR0B |= 0x05;
-  TCCR1B = (1 << ICNC1) | (1 << ICES1);
-
-  // Motor speed
-  TCCR1B |= (1 << CS12) | (1 << CS10);
-  OCR0A = 255;
-
-  uart_init();//initialize communication with PC - debugging
-  io_redirect();//redirect printf function to uart, so text will be shown on PC
-
-  printf("page 0%c%c%c",255,255,255);//init at 9600 baud.
-  _delay_ms(20);
-
-  while (1) 
   {
+    // Registers
 
+    TCCR1A = 0x00;
+    DDRB &= ~0x01;
+    PORTB |= 0x01;
+    TCCR1B = 0XC5;
+    DDRD |= 0x60;
+    TCCR0A |= 0xA3;
+    TCCR0B |= 0x05;
+    TCCR1B = (1 << ICNC1) | (1 << ICES1);
 
-    targetspeed1 = inputdistance1/inputseconds1;
-    targetspeed2 = inputdistance2/inputseconds2;
+    // Motor speed
+    TCCR1B |= (1 << CS12) | (1 << CS10);
+    OCR0A = 255;
 
+    uart_init();//initialize communication with PC - debugging
+    io_redirect();//redirect printf function to uart, so text will be shown on PC
+    
     int motor = motorcontrol();
-
+    
   }
-} 
-
+}
 
 int motorcontrol(void)
 { 
@@ -116,19 +105,12 @@ int motorcontrol(void)
 
     opto_time = time();
     
-    if(voltage > 6.8)
-    {
-      OCR0A = 0;
-      check = 2;
-    }
-
     if(opto_time != previoustime)
     {
       currentspeed = tireCircumference/opto_time;
       
       if(check == 0)
       {
-        
         totalrotations1 = totalrotations1 + 0.125;
 
         timepassed1 = timepassed1 + (opto_time/8);
@@ -143,26 +125,23 @@ int motorcontrol(void)
 
         targetspeed = targetspeed1;
 
-        // DEBUGGING PRINTS BELOW
-
         // printf("\nICR1: %u", counter);
-        printf("\nTime Passed: %f",timepassed1);
-        printf("     Speed(cm/s): %f.", currentspeed);
+        // printf("     Time Passed: %f",timepassed1);
+        printf("\nSpeed(cm/s): %f.", currentspeed);
         printf("     Target speed: %f",targetspeed1);
         // printf("     Total Rotations: %f", totalrotations1);
-        printf("     Distance covered: %f", distancecovered1);
-        // printf("     Distance left: %f", distanceleft1);
+        // printf("     Distance covered: %f", distancecovered1);
+        printf("     Distance left: %f", distanceleft1);
+
 
         if( distancecovered1 == inputdistance1 | distancecovered1 > inputdistance1)
         {
           check = 1;
           OCR0A = 0;
-
-          // printf("\nCondition 1 has been met.\n");
-          // printf("\nCondition 2 will start in 5 seconds.\n");
+          printf("\nCondition 1 has been met.\n");
+          printf("\nCondition 2 will start in 5 seconds.\n");
           _delay_ms(5000);
           OCR0A = 255;
-
         }
       }
 
@@ -183,31 +162,20 @@ int motorcontrol(void)
 
         targetspeed = targetspeed2;
 
-        //DEBUGGING PRINTS BELOW
-
         // printf("\nICR1: %u", counter);
-        printf("\nTime Passed: %f",timepassed2);
-        printf("     Speed(cm/s): %f.", currentspeed);
+        // printf("     Time Passed: %f",timepassed2);
+        printf("\nSpeed(cm/s): %f.", currentspeed);
         printf("     Target speed: %f",targetspeed2);
         // printf("     Total Rotations: %f", totalrotations2);
-        printf("     Distance covered: %f", distancecovered2);
-        // printf("     Distance left: %f", distanceleft2);
+        // printf("     Distance covered: %f", distancecovered2);
+        printf("     Distance left: %f", distanceleft2);
 
       }
-
       // Below, there is stuff that should be in the while loop -
       // first executing the computePi function, then checking and assigning the value to OCR0A
       speed = currentspeed;
       control = computePi();
       speedcontrol = OCR0A + control;
-      if(speedcontrol < OCR0A)
-      {
-        speedcheck = 0;
-      }
-      else if(speedcontrol > OCR0A)
-      {
-        speedcheck = 1;
-      }
       // Checking if the control value is between 0 and 255 to avoid a fatal error
       if (speedcontrol > 0 && speedcontrol < 255)
       {
@@ -221,7 +189,6 @@ int motorcontrol(void)
         OCR0A = 0;
         printf("\nCondition 2 has been met.\n");
         printf("\nThank you for joining us on this horrendeous journey.\n");
-
       }
     }
     previoustime = opto_seconds;
@@ -248,6 +215,7 @@ float time(void)
 
 float computePi()
 {
+
   // There is no time involved in calculating the derivative and cumulative error
   // because of the equal delay between every function execution
   // printf("     adjusted");
