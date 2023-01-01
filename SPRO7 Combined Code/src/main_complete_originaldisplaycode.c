@@ -69,7 +69,7 @@ float error, lastError, setSpeed, cumError, rateError;
 
 float computePi();
 float time();
-unsigned int read_adc();
+float read_adc();
 
 int main(void)
 {
@@ -195,6 +195,7 @@ int main(void)
     {
       targetspeed1 = inputdistance1/inputseconds1;
       targetspeed2 = inputdistance2/inputseconds2;
+      printf("page 4%c%c%c",255,255,255);
       int motor = motorcontrol();
     }
 
@@ -216,8 +217,6 @@ int motorcontrol(void)
     count++;
 
     opto_time = time();
-
-
     
     if(voltage > 6.8)
     {
@@ -231,9 +230,7 @@ int motorcontrol(void)
       currentspeed = tireCircumference/opto_time;
       
       if(check == 0)
-      {
-        printf("page 4%c%c%c",255,255,255);
-        
+      {        
         totalrotations1 = totalrotations1 + 0.125;
 
         timepassed1 = timepassed1 + (opto_time/8);
@@ -261,7 +258,7 @@ int motorcontrol(void)
         printf("page4.x0.val=%d%c%c%c", (int)currentspeed*100, 255,255,255);
         printf("page4.x1.val=%d%c%c%c", (int)distancecovered1*100, 255,255,255);
         printf("page4.x2.val=%d%c%c%c", (int)distanceleft1*100, 255,255,255);
-        printf("page4.n0.val=%d%c%c%c", (int)OCR0A, 255,255,255);
+        printf("page4.n0.val=%d%c%c%c", (int)speedcheck, 255,255,255);
         printf("page4.x3.val=%d%c%c%c", (int)voltage*10, 255,255,255);
 
         if( distancecovered1 == inputdistance1 | distancecovered1 > inputdistance1)
@@ -273,6 +270,7 @@ int motorcontrol(void)
           // printf("\nCondition 2 will start in 5 seconds.\n");
           _delay_ms(5000);
           OCR0A = 255;
+          printf("page 5%c%c%c",255,255,255);
 
         }
       }
@@ -280,7 +278,7 @@ int motorcontrol(void)
       if(check == 1)
       {
 
-        printf("page 5%c%c%c",255,255,255);
+
 
         totalrotations2 = totalrotations2 + 0.125;
 
@@ -309,7 +307,7 @@ int motorcontrol(void)
         printf("page5.x0.val=%d%c%c%c", (int)currentspeed*100, 255,255,255);
         printf("page5.x1.val=%d%c%c%c", (int)distancecovered2*100, 255,255,255);
         printf("page5.x2.val=%d%c%c%c", (int)distanceleft2*100, 255,255,255);
-        printf("page5.n0.val=%d%c%c%c", (int)OCR0A, 255,255,255);
+        printf("page5.n0.val=%d%c%c%c", (int)speedcheck, 255,255,255);
         printf("page5.x3.val=%d%c%c%c", (int)voltage*10, 255,255,255);
 
 
@@ -352,20 +350,16 @@ int motorcontrol(void)
 
 float time(void)
 { 
-  while(1)
-  
+  while(!((TIFR1 & (1 << 5))))
   {
-    while(!((TIFR1 & (1 << 5))))
-    {
 
-    }
-    
-    TCNT1 = 0;
-    TIFR1 = 0b00100000;
-    counter = ICR1;
-    opto_seconds = (((float)counter * 0.000064)*8); // converts counter value to seconds for 1 full rotation
-    return opto_seconds;
-  }      
+  }
+  
+  TCNT1 = 0;
+  TIFR1 = 0b00100000;
+  counter = ICR1;
+  opto_seconds = (((float)counter * 0.000064)*8); // converts counter value to seconds for 1 full rotation
+  return opto_seconds;      
 }
 
 float computePi()
@@ -384,11 +378,11 @@ float computePi()
   return out;
 }
 
-unsigned int read_adc(void)
+float read_adc(void)
 {
   ADMUX = ADMUX | 0X40;
   ADCSRB = ADCSRB & (0XF8);
   ADCSRA = ADCSRA | 0XE7;
   unsigned int adclow = ADCL;
-  return (adclow + ((ADCH & 0x03) << 8));
+  return (((adclow + ((ADCH & 0x03) << 8))*5/1023)*5/3);
 }
